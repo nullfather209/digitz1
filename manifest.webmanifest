@@ -1,0 +1,9 @@
+{
+  "name": "Button Phone",
+  "short_name": "Button Phone",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#101820",
+  "theme_color": "#101820",
+  "description": "A keyboard-first mini app launcher for phones with physical buttons."
+}

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101820">
+  <meta name="description" content="A keyboard-first mini app launcher for Android phones with physical buttons.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>Button Phone</title>
+  <style>
+    :root { color-scheme: dark; --bg:#101820; --panel:#182631; --panel2:#203341; --fg:#f0f5f7; --muted:#a8bac5; --accent:#9be564; --focus:#d5ff61; --line:#3a5362; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; background:var(--bg); color:var(--fg); font:16px/1.4 system-ui, sans-serif; }
+    body { min-height:100dvh; display:flex; justify-content:center; }
+    #phone { width:min(100%, 520px); min-height:100dvh; display:flex; flex-direction:column; padding:12px; gap:10px; }
+    header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding:3px 2px 10px; }
+    #brand { font-weight:800; letter-spacing:.08em; }
+    #clock { color:var(--muted); font-variant-numeric:tabular-nums; }
+    main { flex:1; display:flex; flex-direction:column; min-height:0; }
+    h1 { font-size:1.25rem; margin:8px 0 4px; }
+    .hint { color:var(--muted); font-size:.88rem; margin:0 0 12px; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; }
+    .menu { display:flex; flex-direction:column; gap:6px; }
+    .item { display:flex; align-items:center; gap:12px; min-height:52px; border:2px solid transparent; border-radius:9px; padding:8px 10px; background:var(--panel2); }
+    .item .num { color:var(--muted); width:1.5em; text-align:center; font-variant-numeric:tabular-nums; }
+    .item .name { flex:1; font-weight:650; }
+    .item .chev { color:var(--muted); }
+    .item.active { border-color:var(--focus); background:#304635; color:#fff; }
+    .item.active .num,.item.active .chev { color:var(--focus); }
+    .toolbar { display:flex; gap:8px; margin-top:12px; }
+    .toolbar button, .action { min-height:42px; border:1px solid var(--line); border-radius:8px; padding:8px 12px; color:var(--fg); background:var(--panel2); font:inherit; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
+    .toolbar button { flex:1; }
+    .softkeys { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; border-top:1px solid var(--line); padding-top:9px; color:var(--muted); font-size:.82rem; text-align:center; }
+    .softkeys strong { display:block; color:var(--fg); font-size:.9rem; }
+    .screen { display:none; }
+    .screen.active { display:block; }
+    .status { color:var(--muted); font-size:.86rem; margin-top:8px; }
+    .big { font-size:1.05rem; font-weight:700; }
+    .keybox { border:1px solid var(--line); border-radius:9px; background:#0c1319; padding:12px; min-height:105px; overflow-wrap:anywhere; }
+    .keybox b { color:var(--focus); }
+    .keygrid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:10px; }
+    .keygrid span { border:1px solid var(--line); border-radius:7px; padding:10px 4px; text-align:center; color:var(--muted); }
+    textarea, input { display:block; width:100%; background:#0c1319; border:1px solid var(--line); border-radius:8px; padding:11px; color:var(--fg); font:inherit; }
+    textarea { min-height:150px; resize:vertical; }
+    .calc { font-variant-numeric:tabular-nums; font-size:1.6rem; text-align:right; min-height:54px; }
+    .links a { display:block; padding:12px; border-radius:8px; background:var(--panel2); color:var(--fg); margin:7px 0; text-decoration:none; border:2px solid transparent; }
+    .links a:focus, .links a.active { outline:0; border-color:var(--focus); }
+    code { color:var(--focus); }
+    @media (max-height:520px) { #phone { padding:7px; gap:5px; } .item { min-height:40px; } h1 { margin-top:2px; } }
+  </style>
+</head>
+<body>
+<div id="phone">
+  <header><span id="brand">BUTTON PHONE</span><span id="clock">--:--</span></header>
+  <main>
+    <section id="home" class="screen active">
+      <h1 id="greeting">Home</h1>
+      <p class="hint">Use the D-pad to move, Enter to open, and Back to return.</p>
+      <div class="panel"><div id="homeMenu" class="menu" role="listbox" aria-label="Main menu"></div></div>
+      <p class="status">Number keys 1–5 are shortcuts. Open Key tester first.</p>
+    </section>
+
+    <section id="tester" class="screen">
+      <h1>Key tester</h1>
+      <p class="hint">Press every physical key you want to use. This page records what the browser receives.</p>
+      <div class="keybox" aria-live="polite"><div class="big" id="keyName">Waiting for a key…</div><div id="keyDetails" class="status">No key received yet.</div></div>
+      <div class="keygrid"><span>↑ ArrowUp</span><span>Enter</span><span>Escape / Back</span><span>← ArrowLeft</span><span>↓ ArrowDown</span><span>→ ArrowRight</span></div>
+      <p class="status">Also test Call/End, 0–9, * and #. The exact key names matter for compatibility.</p>
+    </section>
+
+    <section id="apps" class="screen">
+      <h1>Mini apps</h1>
+      <p class="hint">These simple apps are built into this prototype. Use Up/Down, then Enter.</p>
+      <div id="appsMenu" class="menu"></div>
+    </section>
+
+    <section id="notes" class="screen">
+      <h1>Notes</h1>
+      <p class="hint">Text entry depends on whether your keypad sends text/input events to the browser.</p>
+      <textarea id="noteText" placeholder="Write a note using the physical keypad…"></textarea>
+      <div class="toolbar"><button id="saveNote">Save note</button><button id="clearNote">Clear</button></div>
+      <p id="noteStatus" class="status">Saved locally in this browser.</p>
+    </section>
+
+    <section id="calculator" class="screen">
+      <h1>Calculator</h1>
+      <p class="hint">Type digits and operators, then press Enter. Backspace deletes.</p>
+      <input id="calcInput" class="calc" inputmode="none" value="0" aria-label="Calculation">
+      <div class="toolbar"><button data-calc="C">Clear</button><button data-calc="+">+</button><button data-calc="-">−</button><button data-calc="=">=</button></div>
+      <p id="calcResult" class="status">Ready.</p>
+    </section>
+
+    <section id="webapps" class="screen">
+      <h1>Web apps</h1>
+      <p class="hint">External sites may not be fully keypad-accessible. This prototype opens them in the same tab.</p>
+      <div class="links" id="webLinks">
+        <a href="https://www.wikipedia.org/">Wikipedia</a>
+        <a href="https://m.youtube.com/">YouTube</a>
+        <a href="https://developer.cloudfone.com/">Cloud Phone docs</a>
+        <a href="https://cloudmosa.github.io/cloudphone-react-sample/">Cloud Phone React demo</a>
+      </div>
+    </section>
+
+    <section id="about" class="screen">
+      <h1>About this prototype</h1>
+      <div class="panel">
+        <p>This is a keyboard-first web app shell, not a replacement Android operating system.</p>
+        <p>It can navigate its own menus and mini apps when the browser receives hardware key events.</p>
+        <p>It cannot make native Android apps keypad-compatible. A separate Android app with a WebView or an Accessibility Service would be needed for deeper integration.</p>
+      </div>
+    </section>
+  </main>
+  <div class="softkeys" aria-hidden="true"><div><strong id="leftSoft">Menu</strong>Left / Esc</div><div><strong id="centerSoft">Select</strong>Enter</div><div><strong id="rightSoft">Back</strong>Back key</div></div>
+</div>
+<script>
+(() => {
+  'use strict';
+  const $ = (s, root=document) => root.querySelector(s);
+  const screens = ['home','tester','apps','notes','calculator','webapps','about'];
+  const menuItems = [
+    {id:'tester', label:'Key tester', icon:'⌨'},
+    {id:'apps', label:'Mini apps', icon:'▦'},
+    {id:'webapps', label:'Web apps', icon:'◎'},
+    {id:'about', label:'About', icon:'ⓘ'}
+  ];
+  const miniItems = [
+    {id:'notes', label:'Notes', icon:'▤'},
+    {id:'calculator', label:'Calculator', icon:'＋'}
+  ];
+  let screen = 'home';
+  let homeIndex = 0;
+  let appsIndex = 0;
+  let linkIndex = 0;
+  let calcBuffer = '0';
+
+  function renderMenu(container, items, selected) {
+    container.innerHTML = '';
+    items.forEach((item, i) => {
+      const div = document.createElement('div');
+      div.className = 'item' + (i === selected ? ' active' : '');
+      div.setAttribute('role','option');
+      div.setAttribute('aria-selected', String(i === selected));
+      div.innerHTML = `<span class="num">${i+1}</span><span class="name">${item.icon} &nbsp;${item.label}</span><span class="chev">›</span>`;
+      container.appendChild(div);
+    });
+  }
+  function refreshMenus() {
+    renderMenu($('#homeMenu'), menuItems, homeIndex);
+    renderMenu($('#appsMenu'), miniItems, appsIndex);
+    const anchors = [...$('#webLinks').querySelectorAll('a')];
+    anchors.forEach((a,i) => a.classList.toggle('active', i === linkIndex));
+  }
+  function updateClock() {
+    const d = new Date();
+    $('#clock').textContent = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    $('#greeting').textContent = d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
+  }
+  function show(id) {
+    if (!screens.includes(id)) return;
+    screen = id;
+    screens.forEach(s => $('#'+s).classList.toggle('active', s === id));
+    $('#leftSoft').textContent = id === 'home' ? 'Menu' : 'Options';
+    $('#centerSoft').textContent = id === 'notes' ? 'Save' : id === 'calculator' ? 'Equals' : 'Select';
+    $('#rightSoft').textContent = 'Back';
+    refreshMenus();
+    if (id === 'notes') $('#noteText').focus({preventScroll:true});
+    else if (id === 'calculator') $('#calcInput').focus({preventScroll:true});
+    else document.body.focus?.();
+  }
+  function goBack() {
+    if (screen === 'home') return;
+    if (screen === 'notes' || screen === 'calculator' || screen === 'tester' || screen === 'about' || screen === 'webapps') show('home');
+    else if (screen === 'apps') show('home');
+    else show('home');
+  }
+  function openSelected() {
+    if (screen === 'home') {
+      const id = menuItems[homeIndex]?.id;
+      if (id) show(id);
+    } else if (screen === 'apps') {
+      const id = miniItems[appsIndex]?.id;
+      if (id) show(id);
+    } else if (screen === 'webapps') {
+      const a = [...$('#webLinks').querySelectorAll('a')][linkIndex];
+      if (a) location.href = a.href;
+    } else if (screen === 'notes') saveNote();
+    else if (screen === 'calculator') calculate();
+  }
+  function saveNote() {
+    try { localStorage.setItem('button-phone-note', $('#noteText').value); $('#noteStatus').textContent = 'Saved.'; }
+    catch { $('#noteStatus').textContent = 'Storage is unavailable in this browser.'; }
+  }
+  function calculate() {
+    const raw = $('#calcInput').value.trim();
+    if (!/^[0-9+\-*/().%\s]+$/.test(raw)) { $('#calcResult').textContent = 'Only numbers and + − × ÷ are supported.'; return; }
+    try {
+      const result = Function('"use strict"; return (' + raw + ')')();
+      if (!Number.isFinite(result)) throw new Error('not finite');
+      $('#calcInput').value = String(result); $('#calcResult').textContent = 'Result';
+    } catch { $('#calcResult').textContent = 'Invalid calculation.'; }
+  }
+  function appendCalc(value) {
+    const input = $('#calcInput');
+    if (value === 'C') input.value = '0';
+    else if (value === '=') calculate();
+    else input.value = input.value === '0' ? value : input.value + value;
+    input.focus({preventScroll:true});
+  }
+  function move(delta) {
+    if (screen === 'home') homeIndex = (homeIndex + delta + menuItems.length) % menuItems.length;
+    else if (screen === 'apps') appsIndex = (appsIndex + delta + miniItems.length) % miniItems.length;
+    else if (screen === 'webapps') {
+      const count = $('#webLinks').querySelectorAll('a').length;
+      linkIndex = (linkIndex + delta + count) % count;
+    } else return false;
+    refreshMenus(); return true;
+  }
+  function moveGrid(direction) {
+    if (screen !== 'home') return false;
+    // Left/right are accepted as alternate previous/next on this compact list.
+    return move(direction);
+  }
+  function showKey(e) {
+    $('#keyName').textContent = e.key || '(empty key value)';
+    $('#keyDetails').innerHTML = `code: <b>${escapeHtml(e.code || '—')}</b> · keyCode: <b>${e.keyCode}</b> · repeat: <b>${e.repeat}</b>`;
+  }
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  document.addEventListener('keydown', (e) => {
+    if (screen === 'tester') showKey(e);
+    const editing = e.target && (e.target.matches('input, textarea, select') || e.target.isContentEditable);
+    if (editing && !['Escape','Backspace','Enter'].includes(e.key)) return;
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      if (screen === 'home' || screen === 'apps' || screen === 'webapps') { e.preventDefault(); move(1); }
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      if (screen === 'home' || screen === 'apps' || screen === 'webapps') { e.preventDefault(); move(-1); }
+    } else if (e.key === 'Enter') {
+      if (screen !== 'tester') { e.preventDefault(); openSelected(); }
+    } else if (e.key === 'Escape' || e.key === 'BrowserBack' || e.key === 'GoBack') {
+      e.preventDefault(); goBack();
+    } else if (e.key === 'Backspace' && !editing) {
+      e.preventDefault(); goBack();
+    } else if (/^[1-9]$/.test(e.key)) {
+      const n = Number(e.key) - 1;
+      if (screen === 'home' && n < menuItems.length) { homeIndex = n; refreshMenus(); }
+      else if (screen === 'apps' && n < miniItems.length) { appsIndex = n; refreshMenus(); }
+      else if (screen === 'webapps' && n < $('#webLinks').querySelectorAll('a').length) { linkIndex = n; refreshMenus(); }
+    }
+  }, true);
+
+  $('#saveNote').addEventListener('click', saveNote);
+  $('#clearNote').addEventListener('click', () => { $('#noteText').value=''; saveNote(); });
+  document.querySelectorAll('[data-calc]').forEach(b => b.addEventListener('click', () => appendCalc(b.dataset.calc)));
+  $('#calcInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); calculate(); } });
+  try { $('#noteText').value = localStorage.getItem('button-phone-note') || ''; } catch {}
+  updateClock(); setInterval(updateClock, 15000); refreshMenus();
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
